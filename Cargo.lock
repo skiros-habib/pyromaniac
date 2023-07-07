@@ -912,6 +912,8 @@ dependencies = [
  "tokio-serde",
  "tokio-util",
  "tokio-vsock",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

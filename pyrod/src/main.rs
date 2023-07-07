@@ -1,29 +1,41 @@
+use anyhow::Result;
+use futures::StreamExt as _;
+use pyrod_service::{Pyrod, PyrodServer};
+use tarpc::tokio_serde::formats::Bincode;
 use tarpc::{
     server::{self, Channel},
-    tokio_util::codec::{length_delimited::LengthDelimitedCodec, Framed},
+    tokio_util::codec::length_delimited::LengthDelimitedCodec,
 };
-
-use pyrod_service::{Pyrod, PyrodServer};
-use tokio_vsock::VsockStream;
+use tokio_vsock::VsockListener;
 
 const PORT: u32 = 5000;
-const CID: u32 = 3;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
     //create a new vsock connection
-    let vsock_stream = VsockStream::connect(CID, PORT).await?;
-    //delimit the AsyncRead/AsyncWrite into frames using a length header
-    let framed_stream = Framed::new(vsock_stream, LengthDelimitedCodec::new());
+    let mut incoming = VsockListener::bind(libc::VMADDR_CID_ANY, PORT)?.incoming();
+    tracing::info!("Vsock listener opened on port {}", PORT);
 
-    //create the serde-based transport layer from the stream
-    let transport = tarpc::serde_transport::new(
-        framed_stream,
-        tarpc::tokio_serde::formats::Bincode::default(),
-    );
+    while let Some(result) = incoming.next().await {
+        let stream = result?;
+        tracing::info!(
+            "Connection established. Local addr: {:?}, Remote addr {:?}",
+            stream.local_addr(),
+            stream.peer_addr()
+        );
 
-    let server = server::BaseChannel::with_defaults(transport);
-    server.execute(PyrodServer.serve()).await;
+        //create the serde-based transport layer from the stream
+        //build framed stream from raw one using length delimited codec
+        let transport = tarpc::serde_transport::new(
+            LengthDelimitedCodec::builder().new_framed(stream),
+            Bincode::default(),
+        );
+
+        let server = server::BaseChannel::with_defaults(transport);
+        tokio::spawn(server.execute(PyrodServer.serve()));
+        tracing::info!("Server spawned, listening for requests!");
+    }
 
     Ok(())
 }
