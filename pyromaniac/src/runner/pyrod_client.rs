@@ -49,7 +49,9 @@ pub async fn send_request(sock: impl AsRef<Path>) -> Result<()> {
     let client = PyrodClient::new(Default::default(), transport).spawn();
     tracing::debug!("Connection to server established on socket {:?}", sock);
 
-    let response = client.ping(context::current()).await;
+    let response = client
+        .echo(context::current(), "are you alive??".to_owned())
+        .await?;
     tracing::debug!("request sent");
 
     dbg!(response);

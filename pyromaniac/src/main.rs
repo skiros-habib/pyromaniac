@@ -1,7 +1,5 @@
-use std::time::Duration;
-
-mod executor;
-mod vm_client;
+mod api;
+mod runner;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -12,6 +10,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "/home/joey/firecracker/build/cargo_target/x86_64-unknown-linux-musl/debug/firecracker";
     // executor::Executor::spawn(kernel.as_ref(), rootfs.as_ref(), firecracker.as_ref(), 1).await?;
     // tokio::time::sleep(Duration::from_secs(100)).await;
-    vm_client::send_request("/home/joey/pyro/v.sock").await?;
+    runner::send_request("/home/joey/pyro/v.sock").await?;
     Ok(())
 }

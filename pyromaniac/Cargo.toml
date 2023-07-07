@@ -7,11 +7,12 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+axum = { version = "0.6.18", features = ["tracing"] }
 firepilot = {git = "https://github.com/Joeyh021/firepilot"}
 hyper = "0.14.27"
 pyrod = { version = "0.1.0", path = "../pyrod" }
 reqwest = "0.11.18"
-tarpc = { version = "0.33.0", features = ["serde-transport","unix"] }
+tarpc = { version = "0.33.0", features = ["serde-transport"] }
 tempfile = "3.6.0"
 tokio = { version = "1.29.1", features = ["full"] }
 tracing = "0.1.37"
