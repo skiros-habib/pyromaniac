@@ -6,12 +6,15 @@ pub use firecracker::*;
 use pyrod_service::Language;
 use std::path::PathBuf;
 
-fn get_roofs(lang: Language) -> PathBuf {
-    match lang {
-        Language::Python => todo!(),
-        Language::Rust => todo!(),
-        Language::Java => todo!(),
-    }
+fn get_rootfs(lang: Language) -> PathBuf {
+    crate::config::get().resource_path.join(format!(
+        "rootfs-{}.ext4",
+        match lang {
+            Language::Python => "python",
+            Language::Rust => todo!(),
+            Language::Java => todo!(),
+        }
+    ))
 }
 
 #[tracing::instrument(skip(code, input))]
@@ -19,8 +22,8 @@ pub async fn run_code(lang: Language, code: String, input: String) -> Result<(St
     let config = firecracker::Config {
         cpu_count: 1,
         mem: 2048, //in MiB
-        rootfs: "/home/joey/pyro/resources/rootfs-python.ext4".into(),
-        kernel: "/home/joey/pyro/resources/kernel.bin".into(),
+        rootfs: get_rootfs(lang),
+        kernel: crate::config::get().resource_path.join("kernel.bin"),
     };
 
     tracing::debug!("Booting new VM...");

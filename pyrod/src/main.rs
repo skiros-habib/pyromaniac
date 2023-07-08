@@ -21,6 +21,9 @@ async fn main() -> Result<()> {
             .finish(),
     )?;
 
+    //we are the init process, so need to do this ourselves
+    std::fs::create_dir("/tmp")?;
+
     //create a new vsock connection
     let mut incoming = VsockListener::bind(libc::VMADDR_CID_ANY, PORT)
         .context(format!(

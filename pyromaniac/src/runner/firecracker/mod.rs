@@ -6,13 +6,10 @@ use std::{path::PathBuf, process::Stdio};
 use tempfile::TempDir;
 use tokio::process::{Child, Command};
 
-static FC_PATH: &str =
-    "/home/joey/firecracker/build/cargo_target/x86_64-unknown-linux-musl/debug/firecracker";
-
 /// Holds the resources for our virtual machine
 /// When dropped, will kill the process and clean up all temp resources
 pub struct Machine {
-    process: Child,
+    _process: Child,
     dir: TempDir,
 }
 
@@ -51,7 +48,7 @@ impl Machine {
         tracing::debug!("Rootfs for VM {:?} copied over", tempdir.path());
 
         //spawn firecracker process
-        let child = Command::new(FC_PATH)
+        let child = Command::new(crate::config::get().resource_path.join("firecracker"))
             .current_dir(tempdir.path())
             .arg("--no-api")
             .arg("--config-file")
@@ -66,7 +63,7 @@ impl Machine {
         tracing::info!("VM with tempdir at path {:?} started", tempdir.path());
 
         Ok(Machine {
-            process: child,
+            _process: child,
             dir: tempdir,
         })
     }

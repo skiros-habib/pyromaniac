@@ -8,7 +8,7 @@ use std::{
 };
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub enum Language {
     Python,
     Rust,

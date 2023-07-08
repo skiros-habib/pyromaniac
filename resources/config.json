@@ -18,11 +18,11 @@
     },
     "vsock": {
         "guest_cid": 3,
-        "uds_path": "v.sock",
+        "uds_path": "run/pyrod.sock",
         "vsock_id": "vsock0"
     },
     "logger": {
-        "log_path": "fc.log",
+        "log_path": "run/firecracker.log",
         "level": "Info",
         "show_level": true,
         "show_log_origin": true

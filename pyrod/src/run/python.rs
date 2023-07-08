@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::{ffi::OsString, io::Write, os::unix::prelude::OsStringExt};
+use std::{os::unix::process::CommandExt, process::Command};
 use std::{
     path::{Path, PathBuf},
     process::Stdio,
@@ -21,8 +21,10 @@ impl super::Runner for PythonRunner {
     #[tracing::instrument(skip(self, stdin))]
     fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), std::io::Error> {
         //spawn child process
-        let mut child = Command::new("/usr/bin/python")
+        let mut child = Command::new("/usr/local/bin/python")
             .arg(path.as_os_str())
+            .uid(111) //service user id of firecracker process - don't want to run as root
+            .gid(111) //set in the dockerfiles used to build rootfs images
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

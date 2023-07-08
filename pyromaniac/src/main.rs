@@ -3,6 +3,7 @@ use tracing::Level;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 mod api;
+mod config;
 mod runner;
 
 #[tokio::main]

@@ -1,7 +1,0 @@
-#!/sbin/openrc-run
-# init script to start pyrod on the alpine VM
-
-name="pyrod"
-command="/bin/pyrod"
-command_args="${service_args}"
-command_user="pyrod:pyrod"

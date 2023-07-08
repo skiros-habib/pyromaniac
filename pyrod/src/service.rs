@@ -49,7 +49,7 @@ impl Pyrod for PyrodServer {
         })
         .join();
 
-        match result {
+        let output = match result {
             Ok(Ok(output)) => Ok(output),
             Ok(Err(e)) => Err(RunnerError::IOError(e.to_string())),
             Err(e) => Err(RunnerError::ThreadPanicked(format!("{e:?}"))),
@@ -57,6 +57,16 @@ impl Pyrod for PyrodServer {
         .and_then(|(out, err)| {
             let convert = |s: OsString| s.into_string().map_err(|_| RunnerError::OutputUtf8Error);
             Ok((convert(out)?, convert(err)?))
-        })
+        });
+
+        match &output {
+            Ok((out, err)) => tracing::info!(
+                "Code executed succesfully!\n stdout:\n {} \n stderr: \n {}\n:",
+                out,
+                err
+            ),
+            Err(e) => tracing::info!("Error during execution: {}", e),
+        }
+        output
     }
 }

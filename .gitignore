@@ -2,5 +2,5 @@
 *.sock
 *.log
 .vscode
-resources/kernel.bin
-resources/rootfs.ext4
+resources/*
+!resources/config.json
