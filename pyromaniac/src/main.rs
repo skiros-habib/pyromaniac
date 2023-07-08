@@ -1,9 +1,21 @@
+use pyrod_service::Language;
+use tracing::Level;
+use tracing_subscriber::fmt::format::FmtSpan;
+
 mod api;
 mod runner;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
-    runner::run_code("".to_owned(), "".to_owned()).await?;
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::fmt::fmt()
+            .pretty()
+            .with_span_events(FmtSpan::ACTIVE)
+            .with_max_level(Level::DEBUG)
+            .finish(),
+    )?;
+
+    let output = runner::run_code(Language::Python, "".to_owned(), "".to_owned()).await?;
+    dbg!(output);
     Ok(())
 }

@@ -17,14 +17,19 @@ pub struct Machine {
 }
 
 impl Machine {
+    #[tracing::instrument]
     pub async fn spawn(conf: Config) -> Result<Self> {
         //create directory to put all our shit in
         let tempdir = TempDir::new().context("Failed to create tempdir")?;
+
+        tracing::debug!("Tempdir for new VM created at {:?}", tempdir.path());
 
         //create config file for this VM
         conf.write_to_file(tempdir.path())
             .await
             .context("Failed to write config file")?;
+
+        tracing::debug!("Config file for VM at {:?} written", tempdir.path());
 
         //we have to create the logfile before firecracker can use it
         tokio::fs::File::create(tempdir.path().join("firecracker.log"))
@@ -43,6 +48,8 @@ impl Machine {
             .await
             .context("Failed to copy rootfs into tempdir")?;
 
+        tracing::debug!("Rootfs for VM {:?} copied over", tempdir.path());
+
         //spawn firecracker process
         let child = Command::new(FC_PATH)
             .current_dir(tempdir.path())
@@ -55,6 +62,8 @@ impl Machine {
             .stderr(Stdio::null())
             .spawn()
             .context("Failed to spawn Firecracker process")?;
+
+        tracing::info!("VM with tempdir at path {:?} started", tempdir.path());
 
         Ok(Machine {
             process: child,

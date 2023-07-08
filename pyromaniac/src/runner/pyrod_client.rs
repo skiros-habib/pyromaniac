@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use pyrod_service::PyrodClient;
+use std::fmt::Debug;
 use std::{path::Path, time::SystemTime};
 use tarpc::context;
 use tarpc::tokio_serde::formats::Bincode;
-use tarpc::tokio_util::codec::{length_delimited::LengthDelimitedCodec, Framed};
+use tarpc::tokio_util::codec::length_delimited::LengthDelimitedCodec;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 const PORT: u16 = 5000;
 
@@ -55,15 +56,32 @@ async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
     Ok(client)
 }
 
-pub async fn ping(sock: impl AsRef<Path>) -> Result<()> {
+#[tracing::instrument]
+pub async fn ping(sock: impl AsRef<Path> + Debug) -> Result<()> {
     let client = connect(sock).await.context("Failed to create RPC client")?;
     tracing::debug!("Sending Ping...");
 
-    let mut ctx = context::current();
-    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(30);
-    let response = client.ping(ctx).await?;
+    let response = client.ping(context::current()).await?;
 
     tracing::debug!("Ping response: {}", response);
     anyhow::ensure!(response == "Pong!");
     Ok(())
+}
+
+#[tracing::instrument(skip(code, input))]
+#[must_use]
+pub async fn run_code(
+    sock: impl AsRef<Path> + Debug,
+    lang: pyrod_service::Language,
+    code: String,
+    input: String,
+) -> Result<(String, String)> {
+    let client = connect(sock).await.context("Failed to create RPC client")?;
+
+    let mut ctx = context::current();
+    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(30);
+    client
+        .run_code(ctx, lang, code, input)
+        .await?
+        .map_err(Into::into)
 }

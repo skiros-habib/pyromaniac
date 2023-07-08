@@ -4,6 +4,7 @@ use serde_json::json;
 use std::path::{Path, PathBuf};
 use tokio::io::AsyncWriteExt;
 
+#[derive(Debug)]
 pub struct Config {
     pub cpu_count: u32,
     pub mem: u32,
@@ -12,7 +13,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub async fn write_to_file<P: AsRef<Path>>(&self, tmp_path: P) -> Result<()> {
+    #[tracing::instrument]
+    pub async fn write_to_file<P: AsRef<Path> + std::fmt::Debug>(&self, tmp_path: P) -> Result<()> {
         let tmp_path = tmp_path.as_ref();
 
         //generate all the json that we need to dump to file
