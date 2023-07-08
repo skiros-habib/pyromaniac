@@ -16,7 +16,6 @@ const PORT: u32 = 5000;
 async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt::fmt()
-            .pretty()
             .with_span_events(FmtSpan::ACTIVE)
             .with_max_level(Level::DEBUG)
             .finish(),

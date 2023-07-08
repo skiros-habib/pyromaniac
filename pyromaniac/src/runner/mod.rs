@@ -19,7 +19,7 @@ pub async fn run_code(lang: Language, code: String, input: String) -> Result<(St
     let config = firecracker::Config {
         cpu_count: 1,
         mem: 2048, //in MiB
-        rootfs: "/home/joey/pyro/resources/rootfs.ext4".into(),
+        rootfs: "/home/joey/pyro/resources/rootfs-python.ext4".into(),
         kernel: "/home/joey/pyro/resources/kernel.bin".into(),
     };
 
@@ -30,17 +30,11 @@ pub async fn run_code(lang: Language, code: String, input: String) -> Result<(St
     //TODO: use notify crate to wait for unix sock to be created
     {
         let _span =
-            tracing::info_span!("Waiting on VM to boot", pyrod_socket = ?machine.sock_path());
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            tracing::info_span!("Waiting on VM to boot", pyrod_socket = ?machine.sock_path())
+                .entered();
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
     tracing::debug!("VM booted, socket at {:?}", machine.sock_path());
-
-    //first ping to make sure we're good
-    pyrod_client::ping(machine.sock_path()).await?;
-    tracing::debug!(
-        "Pong back from VM at {:?}, good to run code",
-        machine.sock_path()
-    );
 
     tracing::debug!(code, stdin = input);
     let output = pyrod_client::run_code(machine.sock_path(), lang, code, input).await?;

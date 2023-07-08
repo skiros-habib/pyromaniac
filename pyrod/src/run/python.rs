@@ -18,7 +18,7 @@ impl super::Runner for PythonRunner {
         Ok(path)
     }
 
-    #[tracing::instrument(skip(self, stdin), fields(exec_path = ?path))]
+    #[tracing::instrument(skip(self, stdin))]
     fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), std::io::Error> {
         //spawn child process
         let mut child = Command::new("/usr/bin/python")

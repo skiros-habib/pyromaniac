@@ -1,0 +1,24 @@
+# based on instructions from https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
+from alpine:3.18
+
+# stuff we need
+RUN apk update && apk add openrc util-linux
+RUN rc-update add devfs boot && rc-update add procfs boot && rc-update add sysfs boot
+
+# create service user for pyrod
+RUN addgroup -S -g 111 pyrod
+RUN adduser -S -D -H -u 111 -G pyrod pyrod
+
+# add init script for pyrod
+COPY scripts/pyrod /etc/init.d
+RUN chmod a+x /etc/init.d/pyrod
+
+# copy built pyrod binary in
+COPY target/x86_64-unknown-linux-musl/release/pyrod /bin
+
+# stuff for python
+RUN apk add python3
+
+COPY scripts/copy-to-rootfs.sh .
+RUN chmod +x copy-to-rootfs.sh
+CMD ./copy-to-rootfs.sh
