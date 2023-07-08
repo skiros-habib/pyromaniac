@@ -1,24 +1,16 @@
 mod firecracker;
 mod pyrod_client;
 
+use anyhow::Result;
+pub use firecracker::*;
+use pyrod_service::Language;
 use std::path::PathBuf;
 
-pub use anyhow::Result;
-pub use firecracker::*;
-
-pub enum Language {
-    Python,
-    Rust,
-    Java,
-}
-
-impl Language {
-    fn get_roofs(&self) -> PathBuf {
-        match self {
-            Language::Python => todo!(),
-            Language::Rust => todo!(),
-            Language::Java => todo!(),
-        }
+fn get_roofs(lang: Language) -> PathBuf {
+    match lang {
+        Language::Python => todo!(),
+        Language::Rust => todo!(),
+        Language::Java => todo!(),
     }
 }
 

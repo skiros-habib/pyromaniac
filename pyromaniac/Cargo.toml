@@ -8,10 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 axum = { version = "0.6.18", features = ["tracing"] }
-hyper = "0.14.27"
 notify = "6.0.1"
 pyrod = { version = "0.1.0", path = "../pyrod" }
 reqwest = "0.11.18"
+serde = "1.0.167"
 serde_json = "1.0.100"
 tarpc = { version = "0.33.0", features = ["serde-transport"] }
 tempfile = "3.6.0"
