@@ -2,14 +2,8 @@ mod api;
 mod runner;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
-    let kernel = "resources/kernel.bin";
-    let rootfs = "resources/rootfs.ext4";
-    let firecracker =
-        "/home/joey/firecracker/build/cargo_target/x86_64-unknown-linux-musl/debug/firecracker";
-    // executor::Executor::spawn(kernel.as_ref(), rootfs.as_ref(), firecracker.as_ref(), 1).await?;
-    // tokio::time::sleep(Duration::from_secs(100)).await;
-    runner::send_request("/home/joey/pyro/v.sock").await?;
+    runner::run_code("".to_owned(), "".to_owned()).await?;
     Ok(())
 }

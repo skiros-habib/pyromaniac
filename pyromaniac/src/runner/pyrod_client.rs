@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use pyrod_service::PyrodClient;
 use std::path::Path;
 use tarpc::context;
@@ -7,10 +7,13 @@ use tarpc::tokio_util::codec::{length_delimited::LengthDelimitedCodec, Framed};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 const PORT: u16 = 5000;
 
-pub async fn send_request(sock: impl AsRef<Path>) -> Result<()> {
+async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
     let sock = sock.as_ref();
     //we can't just use tarpc::unix::connect because we need to establish the connection with the port number over the raw stream first
-    let mut stream = tokio::net::UnixStream::connect(sock).await?;
+    let mut stream = tokio::net::UnixStream::connect(sock)
+        .await
+        .context(format!("Could not open stream on Unix socket {sock:?}"))?;
+
     tracing::debug!("Opened stream on unix socket {:?}", sock);
 
     //write the connection message with port into the stream
@@ -48,12 +51,16 @@ pub async fn send_request(sock: impl AsRef<Path>) -> Result<()> {
     let transport = tarpc::serde_transport::new(framed_stream, Bincode::default());
     let client = PyrodClient::new(Default::default(), transport).spawn();
     tracing::debug!("Connection to server established on socket {:?}", sock);
+    Ok(client)
+}
 
-    let response = client
-        .echo(context::current(), "are you alive??".to_owned())
-        .await?;
-    tracing::debug!("request sent");
+pub async fn ping(sock: impl AsRef<Path>) -> Result<()> {
+    let client = connect(sock).await.context("Failed to create RPC client")?;
+    tracing::debug!("Sending Ping...");
+    let response = client.ping(context::current()).await?;
 
-    dbg!(response);
-    Ok(())
+    tracing::debug!("Ping response: {}", response);
+    (response == "Pong!")
+        .then_some(())
+        .ok_or_else(|| anyhow::anyhow!("bad ping"))
 }
