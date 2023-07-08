@@ -32,8 +32,8 @@ async fn main() -> Result<()> {
             Bincode::default(),
         );
 
-        let server = server::BaseChannel::with_defaults(transport);
-        tokio::spawn(server.execute(PyrodServer.serve()));
+        let fut = server::BaseChannel::with_defaults(transport).execute(PyrodServer.serve());
+        tokio::spawn(fut);
         tracing::info!("Server spawned, listening for requests!");
     }
 

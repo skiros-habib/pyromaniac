@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use pyrod_service::PyrodClient;
-use std::path::Path;
+use std::{path::Path, time::SystemTime};
 use tarpc::context;
 use tarpc::tokio_serde::formats::Bincode;
 use tarpc::tokio_util::codec::{length_delimited::LengthDelimitedCodec, Framed};
@@ -27,7 +27,7 @@ async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
 
     //read two chars from the buf
     //we want it to say "OK"
-    let mut buf = vec![0u8; 20];
+    let mut buf = vec![0u8; 14];
     let n_read = stream.read(&mut buf).await?;
     if &buf[0..1] != "OK".as_bytes() && buf[13] != b'\n' {
         anyhow::bail!(
@@ -39,16 +39,17 @@ async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
     tracing::debug!(
         "Got OK message back from socket {:?}, {} ({} bytes read)",
         sock,
-        String::from_utf8_lossy(&buf),
+        String::from_utf8_lossy(&buf[0..13]),
         n_read
     );
 
     //we can hand over the stream to tarpc now
-    //delimit the AsyncRead/AsyncWrite into frames using a length header
-    let framed_stream = Framed::new(stream, LengthDelimitedCodec::new());
+    //build transport layer using serde bincode and length-delimited frames
+    let transport = tarpc::serde_transport::new(
+        LengthDelimitedCodec::builder().new_framed(stream),
+        Bincode::default(),
+    );
 
-    //create the serde-based transport layer from the stream
-    let transport = tarpc::serde_transport::new(framed_stream, Bincode::default());
     let client = PyrodClient::new(Default::default(), transport).spawn();
     tracing::debug!("Connection to server established on socket {:?}", sock);
     Ok(client)
@@ -57,10 +58,12 @@ async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
 pub async fn ping(sock: impl AsRef<Path>) -> Result<()> {
     let client = connect(sock).await.context("Failed to create RPC client")?;
     tracing::debug!("Sending Ping...");
-    let response = client.ping(context::current()).await?;
+
+    let mut ctx = context::current();
+    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(30);
+    let response = client.ping(ctx).await?;
 
     tracing::debug!("Ping response: {}", response);
-    (response == "Pong!")
-        .then_some(())
-        .ok_or_else(|| anyhow::anyhow!("bad ping"))
+    anyhow::ensure!(response == "Pong!");
+    Ok(())
 }

@@ -22,11 +22,11 @@ pub async fn run_code(code: String, input: String) -> Result<(String, String)> {
         kernel: "/home/joey/pyro/resources/kernel.bin".into(),
     };
 
-    let machine = firecracker::Machine::spawn(config).await?;
-    //TODO: use notify crate to wait for unix sock to be created
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    // let machine = firecracker::Machine::spawn(config).await?;
+    // //TODO: use notify crate to wait for unix sock to be created
+    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-    pyrod_client::ping(machine.sock_path()).await?;
+    pyrod_client::ping("v.sock").await?;
     tracing::info!("Spawned and pinged machine succesfully!");
 
     Ok(("".to_owned(), "".to_owned()))
