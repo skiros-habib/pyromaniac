@@ -12,6 +12,8 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 const PORT: u32 = 5000;
 
+mod init;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(
@@ -21,8 +23,8 @@ async fn main() -> Result<()> {
             .finish(),
     )?;
 
-    //we are the init process, so need to do this ourselves
-    std::fs::create_dir("/tmp")?;
+    //linux system init stuff
+    init::init();
 
     //create a new vsock connection
     let mut incoming = VsockListener::bind(libc::VMADDR_CID_ANY, PORT)

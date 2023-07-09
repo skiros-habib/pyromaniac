@@ -21,7 +21,7 @@ impl Config {
 
         let boot_source = json!({
             "kernel_image_path": self.kernel,
-            "boot_args": "init=/bin/pyrod reboot=k panic=1 pci=off random.trust_cpu=on"
+            "boot_args": "init=/bin/pyrod console=ttyS0 reboot=k panic=1 pci=off random.trust_cpu=on"
         });
 
         let drive = {

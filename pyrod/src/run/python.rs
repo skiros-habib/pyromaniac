@@ -5,25 +5,27 @@ use std::{
     process::Stdio,
 };
 
+use super::RunError;
+
 #[derive(Debug)]
 pub struct PythonRunner;
 
 impl super::Runner for PythonRunner {
     ///For python, all we need to do is write the code to a file somewhere
     #[tracing::instrument]
-    fn compile(&self, code: String) -> Result<PathBuf, std::io::Error> {
+    fn compile(&self, code: String) -> Result<PathBuf, RunError> {
         let path = PathBuf::from("/tmp/code.py");
-        std::fs::write(&path, code)?;
+        std::fs::write(&path, code).map_err(RunError::from)?;
         tracing::debug!("Code written out to {path:?}");
         Ok(path)
     }
 
     #[tracing::instrument(skip(self, stdin))]
-    fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), std::io::Error> {
+    fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), RunError> {
         //spawn child process
         let mut child = Command::new("/usr/local/bin/python")
             .arg(path.as_os_str())
-            .uid(111) //service user id of firecracker process - don't want to run as root
+            .uid(111) //service user id of untrusted process - don't want to run as root
             .gid(111) //set in the dockerfiles used to build rootfs images
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

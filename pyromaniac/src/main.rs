@@ -15,10 +15,26 @@ async fn main() -> anyhow::Result<()> {
             .finish(),
     )?;
 
+    //     let script = r"
+    // import sys
+    // print('Hello, world!')
+    // print('Hello, stderr!', file=sys.stderr)
+    // print('Hello, stdin:')
+    // for line in sys.stdin:
+    //     line = line.rstrip()
+    //     print(f'Message from stdin: {line}')
+    //     ";
+
+    let rust = "
+fn main() {
+    println!(\"Hello, world\");
+}
+    ";
+
     let output = runner::run_code(
-        Language::Python,
-        "print('hello world!')".to_owned(),
-        "".to_owned(),
+        Language::Rust,
+        rust.to_owned(),
+        "line 1\n line2\n line3".to_owned(),
     )
     .await?;
     dbg!(output);

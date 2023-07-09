@@ -4,3 +4,4 @@
 .vscode
 resources/*
 !resources/config.json
+*.out

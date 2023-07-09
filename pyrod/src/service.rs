@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use crate::run::{Runner, RunnerError};
+use crate::run::RunError;
 
 use tarpc::context;
 use tracing::{span, Level};
@@ -15,7 +15,7 @@ pub trait Pyrod {
         lang: super::run::Language,
         code: String,
         input: String,
-    ) -> Result<(String, String), RunnerError>;
+    ) -> Result<(String, String), RunError>;
 }
 
 #[derive(Clone, Debug)]
@@ -35,7 +35,7 @@ impl Pyrod for PyrodServer {
         lang: super::run::Language,
         code: String,
         input: String,
-    ) -> Result<(String, String), RunnerError> {
+    ) -> Result<(String, String), RunError> {
         let runner = lang.get_runner();
 
         //there's no point making these async, because all they're doing
@@ -51,11 +51,11 @@ impl Pyrod for PyrodServer {
 
         let output = match result {
             Ok(Ok(output)) => Ok(output),
-            Ok(Err(e)) => Err(RunnerError::IOError(e.to_string())),
-            Err(e) => Err(RunnerError::ThreadPanicked(format!("{e:?}"))),
+            Ok(Err(e)) => Err(RunError::IOError(e.to_string())),
+            Err(e) => Err(RunError::ThreadPanicked(format!("{e:?}"))),
         }
         .and_then(|(out, err)| {
-            let convert = |s: OsString| s.into_string().map_err(|_| RunnerError::OutputUtf8Error);
+            let convert = |s: OsString| s.into_string().map_err(|_| RunError::OutputUtf8Error);
             Ok((convert(out)?, convert(err)?))
         });
 

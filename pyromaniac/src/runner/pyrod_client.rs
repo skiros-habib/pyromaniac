@@ -78,8 +78,12 @@ pub async fn run_code(
 ) -> Result<(String, String)> {
     let client = connect(sock).await.context("Failed to create RPC client")?;
 
+    //ping just because we can
+    client.ping(context::current()).await?;
+    tracing::info!("Got Pong from VM");
+
     let mut ctx = context::current();
-    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(30);
+    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(60);
     client
         .run_code(ctx, lang, code, input)
         .await?

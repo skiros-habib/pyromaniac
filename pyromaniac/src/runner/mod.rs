@@ -11,7 +11,7 @@ fn get_rootfs(lang: Language) -> PathBuf {
         "rootfs-{}.ext4",
         match lang {
             Language::Python => "python",
-            Language::Rust => todo!(),
+            Language::Rust => "rust",
             Language::Java => todo!(),
         }
     ))

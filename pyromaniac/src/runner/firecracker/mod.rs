@@ -2,7 +2,11 @@ mod config;
 pub use config::Config;
 
 use anyhow::{Context, Result};
-use std::{path::PathBuf, process::Stdio};
+use std::{
+    os::fd::{FromRawFd, IntoRawFd},
+    path::PathBuf,
+    process::Stdio,
+};
 use tempfile::TempDir;
 use tokio::process::{Child, Command};
 
@@ -55,7 +59,12 @@ impl Machine {
             .arg("config.json")
             .kill_on_drop(true) //IMPORTANT - for process to be killed
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
+            .stdout(if cfg!(debug_assertions) {
+                // SAFETY - file is open and valid because we literally just opened it
+                unsafe { Stdio::from_raw_fd(std::fs::File::create("vm.out")?.into_raw_fd()) }
+            } else {
+                Stdio::null()
+            })
             .stderr(Stdio::null())
             .spawn()
             .context("Failed to spawn Firecracker process")?;
