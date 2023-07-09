@@ -8,11 +8,6 @@ RUN adduser -S -D -H -u 111 -G untrusted untrusted
 # copy built pyrod binary in
 COPY target/x86_64-unknown-linux-musl/release/pyrod /bin
 
-# copy this image's filesystem to the mounted filesystem
-RUN for d in bin etc lib root sbin usr; do tar c "/$d" | tar x -C /rootfs; done
-RUN for dir in dev proc run sys var; do mkdir /rootfs/${dir}; done
-
-SHELL ["/bin/ash", "-c"]
 # copy this image's filesystem to the mounted filesystem when ran
 CMD for d in bin etc lib root sbin usr; do tar c "/$d" | tar x -C /rootfs; done && \
     for d in dev proc run sys var; do mkdir /rootfs/${d}; done
