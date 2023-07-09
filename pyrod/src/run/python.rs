@@ -10,11 +10,11 @@ pub struct PythonRunner;
 impl super::Runner for PythonRunner {
     ///For python, all we need to do is write the code to a file somewhere
     #[tracing::instrument]
-    fn compile(&self, code: String) -> Result<PathBuf, RunError> {
+    fn compile(&self, code: String) -> Result<(), RunError> {
         let path = PathBuf::from("/tmp/code.py");
         std::fs::write(&path, code).map_err(RunError::from)?;
         tracing::debug!("Code written out to {path:?}");
-        Ok(path)
+        Ok(())
     }
 
     #[tracing::instrument(skip(self, stdin))]

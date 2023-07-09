@@ -1,7 +1,7 @@
 mod python;
 mod rust;
 
-use std::{ffi::OsString, path::PathBuf};
+use std::ffi::OsString;
 use thiserror::Error;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -12,7 +12,7 @@ pub enum Language {
 }
 
 pub trait Runner {
-    fn compile(&self, code: String) -> Result<PathBuf, RunError>;
+    fn compile(&self, code: String) -> Result<(), RunError>;
     fn run(&self, stdin: String) -> Result<(OsString, OsString), RunError>;
 }
 

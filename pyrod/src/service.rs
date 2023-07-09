@@ -52,6 +52,7 @@ impl Pyrod for PyrodServer {
 
         let output = match result {
             Ok(Ok(output)) => Ok(output),
+            Ok(Err(RunError::CompileError(out, err))) => Ok((out, err)),
             Ok(Err(e)) => Err(RunError::IOError(e.to_string())),
             Err(e) => Err(RunError::ThreadPanicked(format!("{e:?}"))),
         }

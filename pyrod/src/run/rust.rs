@@ -12,7 +12,7 @@ impl super::Runner for RustRunner {
     //we need to our file to be /cargo_project/src/main.rs
     //and to then run cargo build (--release)
     #[tracing::instrument]
-    fn compile(&self, code: String) -> Result<PathBuf, RunError> {
+    fn compile(&self, code: String) -> Result<(), RunError> {
         let path = PathBuf::from("/cargo_project/src/main.rs");
         std::fs::write(&path, code)?;
         tracing::debug!("Code written out to {path:?}");
@@ -44,7 +44,7 @@ impl super::Runner for RustRunner {
 
         if output.status.success() {
             tracing::info!("Code compiled succesfully");
-            Ok(path)
+            Ok(())
         } else {
             tracing::error!("Code failed to compile");
             Err(RunError::CompileError(
