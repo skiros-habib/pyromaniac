@@ -19,9 +19,16 @@ impl Config {
 
         //generate all the json that we need to dump to file
 
+        //disable stty if we don't need it, only used for writing logs in debug mode
+        let boot_args = if cfg!(debug_assertions) {
+            "init=/bin/pyrod console=ttyS0 reboot=k panic=1 pci=off"
+        } else {
+            "init=/bin/pyrod reboot=k panic=1 pci=off"
+        };
+
         let boot_source = json!({
             "kernel_image_path": self.kernel,
-            "boot_args": "init=/bin/pyrod console=ttyS0 reboot=k panic=1 pci=off random.trust_cpu=on"
+            "boot_args":boot_args,
         });
 
         let drive = {
