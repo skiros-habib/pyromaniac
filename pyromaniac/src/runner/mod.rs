@@ -19,9 +19,8 @@ fn get_rootfs(lang: Language) -> PathBuf {
 
 #[tracing::instrument(skip(code, input))]
 pub async fn run_code(lang: Language, code: String, input: String) -> Result<(String, String)> {
-    let config = firecracker::Config {
-        cpu_count: 1,
-        mem: 1024, //in MiB
+    let config = firecracker::VmConfig {
+        runner: &crate::config::get().runner_config,
         rootfs: get_rootfs(lang),
         kernel: crate::config::get().resource_path.join("kernel.bin"),
     };
@@ -32,9 +31,7 @@ pub async fn run_code(lang: Language, code: String, input: String) -> Result<(St
 
     tracing::debug!("VM process spawned, socket at {:?}", machine.sock_path());
 
-    tracing::debug!(code, stdin = input);
     let output = pyrod_client::run_code(machine.sock_path(), lang, code, input).await?;
-    tracing::debug!(stdout = output.0, stdin = output.1);
 
     Ok(output)
 }

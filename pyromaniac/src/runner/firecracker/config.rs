@@ -5,14 +5,13 @@ use std::path::{Path, PathBuf};
 use tokio::io::AsyncWriteExt;
 
 #[derive(Debug)]
-pub struct Config {
-    pub cpu_count: u32,
-    pub mem: u32,
+pub struct VmConfig {
     pub rootfs: PathBuf,
     pub kernel: PathBuf,
+    pub runner: &'static crate::config::RunnerConfig,
 }
 
-impl Config {
+impl VmConfig {
     #[tracing::instrument]
     pub async fn write_to_file<P: AsRef<Path> + std::fmt::Debug>(&self, tmp_path: P) -> Result<()> {
         let tmp_path = tmp_path.as_ref();
@@ -46,8 +45,8 @@ impl Config {
         };
 
         let machine_config = json!({
-            "vcpu_count": self.cpu_count,
-            "mem_size_mib": self.mem,
+            "vcpu_count": self.runner.cpus,
+            "mem_size_mib": self.runner.memory,
             "smt": false
         });
         let vsock = json!({

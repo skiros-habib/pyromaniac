@@ -1,5 +1,5 @@
 mod config;
-pub use config::Config;
+pub use config::VmConfig;
 
 use anyhow::{Context, Result};
 use std::{
@@ -19,7 +19,7 @@ pub struct Machine {
 
 impl Machine {
     #[tracing::instrument]
-    pub async fn spawn(conf: Config) -> Result<Self> {
+    pub async fn spawn(conf: VmConfig) -> Result<Self> {
         //create directory to put all our shit in
         let tempdir = TempDir::new().context("Failed to create tempdir")?;
 
