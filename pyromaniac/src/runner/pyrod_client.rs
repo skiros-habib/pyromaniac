@@ -5,43 +5,28 @@ use std::{path::Path, time::SystemTime};
 use tarpc::context;
 use tarpc::tokio_serde::formats::Bincode;
 use tarpc::tokio_util::codec::length_delimited::LengthDelimitedCodec;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-const PORT: u16 = 5000;
+use tokio::net::UnixListener;
 
-async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
+#[tracing::instrument]
+async fn connect(sock: impl AsRef<Path> + Debug) -> Result<(PyrodClient, UnixListener)> {
     let sock = sock.as_ref();
+
     //we can't just use tarpc::unix::connect because we need to establish the connection with the port number over the raw stream first
-    let mut stream = tokio::net::UnixStream::connect(sock)
-        .await
-        .context(format!("Could not open stream on Unix socket {sock:?}"))?;
+    //this is also confusing, because we are the *server* here as far as the vsock layer is concerned
+    //so we need to keep the connection open
+    let listener =
+        UnixListener::bind(sock).context(format!("Failed to open unix socket {sock:?}"))?;
 
-    tracing::debug!("Opened stream on unix socket {:?}", sock);
-
-    //write the connection message with port into the stream
-    let conn_message = format!("CONNECT {}\n", PORT).into_bytes();
-    stream.write_all(&conn_message).await?;
     tracing::debug!(
-        "Connection message for port {} written into socket {:?}",
-        PORT,
+        "Started listening for pyrod process on unix socket {:?}",
         sock
     );
 
-    //read two chars from the buf
-    //we want it to say "OK"
-    let mut buf = vec![0u8; 14];
-    let n_read = stream.read(&mut buf).await?;
-    if &buf[0..1] != "OK".as_bytes() && buf[13] != b'\n' {
-        anyhow::bail!(
-            "Did not get OK message back from server: got {}",
-            String::from_utf8_lossy(&buf)
-        )
-    }
-    //until we get end of line
-    tracing::debug!(
-        "Got OK message back from socket {:?}, {} ({} bytes read)",
+    let (stream, addr) = listener.accept().await?;
+    tracing::info!(
+        "Accepted connection on socket {:?} with addr {:?}",
         sock,
-        String::from_utf8_lossy(&buf[0..13]),
-        n_read
+        addr
     );
 
     //we can hand over the stream to tarpc now
@@ -51,24 +36,13 @@ async fn connect(sock: impl AsRef<Path>) -> Result<PyrodClient> {
         Bincode::default(),
     );
 
+    //we create a tarpc *client* on this end, because we're the one making RPC calls
     let client = PyrodClient::new(Default::default(), transport).spawn();
-    tracing::debug!("Connection to server established on socket {:?}", sock);
-    Ok(client)
+    tracing::debug!("Connection to pyrod established on socket {:?}", sock);
+    Ok((client, listener))
 }
 
-#[tracing::instrument]
-pub async fn ping(sock: impl AsRef<Path> + Debug) -> Result<()> {
-    let client = connect(sock).await.context("Failed to create RPC client")?;
-    tracing::debug!("Sending Ping...");
-
-    let response = client.ping(context::current()).await?;
-
-    tracing::debug!("Ping response: {}", response);
-    anyhow::ensure!(response == "Pong!");
-    Ok(())
-}
-
-#[tracing::instrument(skip(code, input))]
+#[tracing::instrument(skip(code, input, lang))]
 #[must_use]
 pub async fn run_code(
     sock: impl AsRef<Path> + Debug,
@@ -76,11 +50,11 @@ pub async fn run_code(
     code: String,
     input: String,
 ) -> Result<(String, String)> {
-    let client = connect(sock).await.context("Failed to create RPC client")?;
+    let (client, _l) = connect(sock).await.context("Failed to create RPC client")?;
 
-    //ping just because we can
-    client.ping(context::current()).await?;
-    tracing::info!("Got Pong from VM");
+    // ping commented out for speed
+    // client.ping(context::current()).await?;
+    // tracing::info!("Got Pong from VM");
 
     let mut ctx = context::current();
     ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(60);

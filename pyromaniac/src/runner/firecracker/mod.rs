@@ -78,6 +78,6 @@ impl Machine {
     }
 
     pub fn sock_path(&self) -> PathBuf {
-        self.dir.path().join("pyrod.sock")
+        self.dir.path().join("pyrod.sock_5000")
     }
 }
