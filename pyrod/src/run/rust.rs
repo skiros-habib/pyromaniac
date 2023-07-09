@@ -28,6 +28,7 @@ impl super::Runner for RustRunner {
             .arg("build")
             .arg("--release")
             .arg("--offline")
+            .arg("--quiet")
             .current_dir("/cargo_project")
             .env(
                 "RUSTFLAGS",
