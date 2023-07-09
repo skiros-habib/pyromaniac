@@ -12,7 +12,7 @@ fi
 
 case $lang in
 "rust")
-    size=900
+    size=1000
     ;;
 "python")
     size=100
@@ -34,7 +34,7 @@ mkfs.ext4 rootfs.ext4
 sudo rm -rf /tmp/rootfs && mkdir /tmp/rootfs
 sudo mount rootfs.ext4 /tmp/rootfs
 
-sudo docker build --progress=plain --no-cache . -f "scripts/images/Dockerfile.$lang" -t "pyro-$lang"
+sudo docker build --no-cache . -f "scripts/images/Dockerfile.$lang" -t "pyro-$lang"
 sudo docker run -it --rm -v /tmp/rootfs:/rootfs "pyro-$lang"
 
 sudo umount /tmp/rootfs

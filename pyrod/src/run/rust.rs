@@ -1,9 +1,6 @@
 use std::{ffi::OsString, io::Write, os::unix::prelude::OsStringExt};
 use std::{os::unix::process::CommandExt, process::Command};
-use std::{
-    path::{Path, PathBuf},
-    process::Stdio,
-};
+use std::{path::PathBuf, process::Stdio};
 
 use super::RunError;
 #[derive(Debug)]
@@ -20,6 +17,13 @@ impl super::Runner for RustRunner {
         std::fs::write(&path, code)?;
         tracing::debug!("Code written out to {path:?}");
 
+        std::env::set_var("RUSTUP_HOME", "/usr/local/rustup");
+        std::env::set_var("CARGO_HOME", "/usr/local/cargo");
+        std::env::set_var(
+            "PATH",
+            "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        );
+
         let child = Command::new("/usr/local/cargo/bin/cargo") // where it's installed in alpine
             .arg("build")
             .arg("--release")
@@ -33,8 +37,7 @@ impl super::Runner for RustRunner {
             .stderr(Stdio::piped())
             .uid(111)
             .gid(111)
-            .spawn()
-            .map_err(RunError::from)?;
+            .spawn()?;
 
         //collect output
         let output = child.wait_with_output()?;
@@ -52,7 +55,7 @@ impl super::Runner for RustRunner {
     }
 
     #[tracing::instrument(skip(self, stdin))]
-    fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), RunError> {
+    fn run(&self, stdin: String) -> Result<(OsString, OsString), RunError> {
         //spawn child process
         let mut child = Command::new("/cargo_project/target/release/cargo_project")
             .uid(111) //non-root uids
@@ -64,9 +67,9 @@ impl super::Runner for RustRunner {
 
         tracing::debug!("Child process spawned");
 
-        //pipe input
+        // pipe input
         child.stdin.take().unwrap().write_all(stdin.as_bytes())?;
-        //collect output
+        // collect output
         let output = child.wait_with_output()?;
 
         tracing::debug!("Output collected, process joined");

@@ -12,6 +12,7 @@ COPY target/x86_64-unknown-linux-musl/release/pyrod /bin
 RUN cargo new /cargo_project
 WORKDIR /cargo_project
 
+RUN apk add
 # install useful libs
 RUN cargo add anyhow
 RUN cargo add itertools
@@ -19,7 +20,7 @@ RUN cargo add rand
 # build to cache deps
 RUN cargo build --release
 
-SHELL ["/bin/ash", "-c"]
+RUN chown -R 111:111 /cargo_project
 
 # copy this image's filesystem to the mounted filesystem when ran
 CMD for d in bin etc lib root sbin usr cargo_project; do tar c "/$d" | tar x -C /rootfs; done && \

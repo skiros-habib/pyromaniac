@@ -1,10 +1,7 @@
 mod python;
 mod rust;
 
-use std::{
-    ffi::OsString,
-    path::{Path, PathBuf},
-};
+use std::{ffi::OsString, path::PathBuf};
 use thiserror::Error;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -16,7 +13,7 @@ pub enum Language {
 
 pub trait Runner {
     fn compile(&self, code: String) -> Result<PathBuf, RunError>;
-    fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), RunError>;
+    fn run(&self, stdin: String) -> Result<(OsString, OsString), RunError>;
 }
 
 impl Language {
@@ -49,7 +46,7 @@ impl From<std::io::Error> for RunError {
     fn from(value: std::io::Error) -> Self {
         match value.kind() {
             std::io::ErrorKind::NotFound => Self::FileNotFoundError,
-            _ => todo!(),
+            _ => Self::IOError(format!("{value:?}")),
         }
     }
 }

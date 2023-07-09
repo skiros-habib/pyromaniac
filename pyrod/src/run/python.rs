@@ -1,9 +1,6 @@
 use std::{ffi::OsString, io::Write, os::unix::prelude::OsStringExt};
 use std::{os::unix::process::CommandExt, process::Command};
-use std::{
-    path::{Path, PathBuf},
-    process::Stdio,
-};
+use std::{path::PathBuf, process::Stdio};
 
 use super::RunError;
 
@@ -21,10 +18,10 @@ impl super::Runner for PythonRunner {
     }
 
     #[tracing::instrument(skip(self, stdin))]
-    fn run(&self, path: &Path, stdin: String) -> Result<(OsString, OsString), RunError> {
+    fn run(&self, stdin: String) -> Result<(OsString, OsString), RunError> {
         //spawn child process
         let mut child = Command::new("/usr/local/bin/python")
-            .arg(path.as_os_str())
+            .arg("/tmp/code.py")
             .uid(111) //service user id of untrusted process - don't want to run as root
             .gid(111) //set in the dockerfiles used to build rootfs images
             .stdin(Stdio::piped())

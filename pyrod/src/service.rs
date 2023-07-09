@@ -45,7 +45,8 @@ impl Pyrod for PyrodServer {
         //so, we just spawn a regular thread.
         let result = std::thread::spawn(move || -> Result<_, _> {
             let _span = span!(Level::DEBUG, "Code runner on thread").entered();
-            runner.run(&runner.compile(code)?, input)
+            runner.compile(code)?;
+            runner.run(input)
         })
         .join();
 
