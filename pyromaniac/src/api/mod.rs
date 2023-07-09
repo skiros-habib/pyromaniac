@@ -23,7 +23,7 @@ struct CodeOutput {
     stderr: String,
 }
 
-#[tracing::instrument]
+#[tracing::instrument(ret)]
 async fn run(
     State(semaphore): State<Arc<Semaphore>>,
     Json(req): Json<CodeRun>,
