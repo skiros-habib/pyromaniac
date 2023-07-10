@@ -19,6 +19,8 @@ pub struct RunnerConfig {
     pub max_vms: usize,
     pub compile_timeout: Duration,
     pub run_timeout: Duration,
+    pub uid: Option<u16>,
+    pub gid: Option<u16>,
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
@@ -53,6 +55,21 @@ impl Config {
             .get()
             * 2;
 
+        let uid = dotenvy::var("UID")
+            .map_err(Into::<anyhow::Error>::into) //error trait bullshit
+            .and_then(|p| p.parse::<u16>().map_err(Into::into))
+            .ok();
+
+        let gid = dotenvy::var("GID")
+            .map_err(Into::<anyhow::Error>::into) //error trait bullshit
+            .and_then(|p| p.parse::<u16>().map_err(Into::into))
+            .ok();
+
+        //if release mode and we don't have uid/gid
+        if !cfg!(debug_assertions) && (gid.is_none() || uid.is_none()) {
+            panic!("No uid/gid provided but running in release mode, will be unable to start firecracker")
+        }
+
         let c = Ok(Config {
             resource_path,
             port,
@@ -62,6 +79,8 @@ impl Config {
                 max_vms,
                 compile_timeout: Duration::from_secs(10),
                 run_timeout: Duration::from_secs(15),
+                uid,
+                gid,
             },
         });
 
