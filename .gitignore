@@ -6,3 +6,4 @@ resources/*
 !resources/config.json
 *.out
 .env
+*.err

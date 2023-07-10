@@ -13,8 +13,8 @@ pub struct VmConfig {
 
 impl VmConfig {
     #[tracing::instrument]
-    pub async fn write_to_file<P: AsRef<Path> + std::fmt::Debug>(&self, tmp_path: P) -> Result<()> {
-        let tmp_path = tmp_path.as_ref();
+    pub async fn write_to_file<P: AsRef<Path> + std::fmt::Debug>(&self, chroot: P) -> Result<()> {
+        let chroot = chroot.as_ref();
 
         //generate all the json that we need to dump to file
 
@@ -26,7 +26,7 @@ impl VmConfig {
         };
 
         let boot_source = json!({
-            "kernel_image_path": self.kernel,
+            "kernel_image_path": chroot.join("kernel.bin"),
             "boot_args":boot_args,
         });
 
@@ -34,7 +34,7 @@ impl VmConfig {
             let file_name = self.rootfs.file_name().unwrap_or_else(|| {
                 panic!("The filename for your rootfs is fucked: {:?}", self.rootfs)
             });
-            let tmp_rootfs_path = tmp_path.join(file_name);
+            let tmp_rootfs_path = chroot.join(file_name);
 
             json!({
                 "drive_id": "rootfs",
@@ -51,31 +51,43 @@ impl VmConfig {
         });
         let vsock = json!({
             "guest_cid": 3,
-            "uds_path": tmp_path.join("pyrod.sock"),
+            "uds_path": chroot.join("pyrod.sock"),
             "vsock_id": "vsock0"
         });
+
         let logger = json!({
-            "log_path": tmp_path.join("firecracker.log"),
+            "log_path": chroot.join("firecracker.log"),
             "level": "Debug",
             "show_level": true,
             "show_log_origin": true
         });
 
-        //actual final json object
-        let config_json = json!({
-            "boot-source": boot_source,
-            "drives": [drive],
-            "machine-config": machine_config,
-            "vsock": vsock,
-            "logger": logger
-        });
+        //don't write logs in release mode
+        let config_json = if cfg!(debug_assertions) {
+            //actual final json object
+            json!({
+                "boot-source": boot_source,
+                "drives": [drive],
+                "machine-config": machine_config,
+                "vsock": vsock,
+                "logger": logger
+            })
+        } else {
+            json!({
+                "boot-source": boot_source,
+                "drives": [drive],
+                "machine-config": machine_config,
+                "vsock": vsock
+            })
+        };
 
         //dump it to file
-        let config_path = tmp_path.join("config.json");
+        let config_path = chroot.join("config.json");
         let mut outfile = tokio::fs::File::create(&config_path)
             .await
             .context(format!("Could not open config file {config_path:?}"))?;
 
+        dbg!(&config_json, &outfile);
         outfile
             .write_all(config_json.to_string().as_bytes())
             .await

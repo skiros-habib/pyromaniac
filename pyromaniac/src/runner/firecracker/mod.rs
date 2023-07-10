@@ -18,22 +18,36 @@ pub struct Machine {
 }
 
 impl Machine {
-    #[tracing::instrument]
+    //the spawn methods are very different for debug and release due to how jailer
+    //uses cgroups to restrict filesystem access
+    //see https://github.com/firecracker-microvm/firecracker/issues/1477
+    //when using jailer, we have to put everything at
+    // /tmp/<tempdir>/firecracker/<vm_id>/root
+    // can always use the same vm_id because we're using different tempdir roots
     pub async fn spawn(conf: VmConfig) -> Result<Self> {
         //create directory to put all our shit in
         let tempdir = TempDir::new().context("Failed to create tempdir")?;
 
-        tracing::debug!("Tempdir for new VM created at {:?}", tempdir.path());
+        let chroot = if cfg!(debug_assertions) {
+            tempdir.path().into()
+        } else {
+            tempdir.path().join("firecracker").join("vm").join("root")
+        };
+
+        std::fs::create_dir_all(&chroot)
+            .context(format!("Failed to create chroot dir at {:?}", chroot))?;
+
+        tracing::debug!("Tempdir for new VM created at {:?}", chroot);
 
         //create config file for this VM
-        conf.write_to_file(tempdir.path())
+        conf.write_to_file(&chroot)
             .await
             .context("Failed to write config file")?;
 
-        tracing::debug!("Config file for VM at {:?} written", tempdir.path());
+        tracing::debug!("Config file for VM at {:?} written", &chroot);
 
         //we have to create the logfile before firecracker can use it
-        tokio::fs::File::create(tempdir.path().join("firecracker.log"))
+        tokio::fs::File::create(&chroot.join("firecracker.log"))
             .await
             .context("Unable to create log file")?;
 
@@ -42,43 +56,48 @@ impl Machine {
             .file_name()
             .unwrap_or_else(|| panic!("The filename for your rootfs is fucked: {:?}", conf.rootfs));
 
-        let tmp_rootfs_path = tempdir.path().join(rootfs_file_name);
+        let tmp_rootfs_path = chroot.join(rootfs_file_name);
 
         //create a copy of rootfs
         tokio::fs::copy(conf.rootfs, tmp_rootfs_path)
             .await
             .context("Failed to copy rootfs into tempdir")?;
 
-        tracing::debug!("Rootfs for VM {:?} copied over", tempdir.path());
+        tracing::debug!("Rootfs for VM at {:?} copied over", chroot);
+
+        //we need to copy kernel into chroot so firecracker can use it when running in jailer mode
+        //to save a copy we can just hard link it
+        //we *do* have to copy rootfs tho because those are modified between runs
+        std::fs::hard_link(
+            crate::config::get().resource_path.join("kernel.bin"),
+            chroot.join("kernel.bin"),
+        )
+        .context("Failed to hard link kernel into chroot")?;
 
         //spawn firecracker process
         //use jailer in release mode, firecracker in debug
         let child = if cfg!(debug_assertions) {
-            Command::new(crate::config::get().resource_path.join("jailer"))
-                .current_dir(tempdir.path())
+            Command::new(crate::config::get().resource_path.join("firecracker"))
+                .current_dir(&chroot)
                 .arg("--no-api")
                 .arg("--config-file")
-                .arg("config.json")
+                .arg(&chroot.join("config.json"))
                 .kill_on_drop(true) //IMPORTANT - for process to be killed
                 .stdin(Stdio::null())
                 .stdout(unsafe {
                     //SAFETY - file is open and valid because we just opened it
                     Stdio::from_raw_fd(std::fs::File::create("vm.out")?.into_raw_fd())
                 })
-                .stderr(Stdio::null())
+                .stderr(unsafe {
+                    Stdio::from_raw_fd(std::fs::File::create("vm.err")?.into_raw_fd())
+                })
                 .spawn()
                 .context("Failed to spawn Firecracker process")?
         } else {
-            let vm_id = tempdir
-                .path()
-                .components()
-                .nth(1)
-                .expect("Could not get VM id")
-                .as_os_str();
             Command::new(crate::config::get().resource_path.join("jailer"))
-                .current_dir(tempdir.path())
+                .current_dir(&chroot)
                 .arg("--id")
-                .arg(vm_id)
+                .arg("vm")
                 .arg("--exec-file")
                 .arg(crate::config::get().resource_path.join("firecracker"))
                 .arg("--uid")
@@ -98,28 +117,35 @@ impl Machine {
                         .to_string(),
                 )
                 .arg("--chroot-base-dir")
-                .arg(tempdir.path())
+                .arg(&chroot)
                 .arg("--") //firecracker args go after this
                 .arg("--no-api")
                 .arg("--config-file")
-                .arg("config.json")
+                .arg(&chroot.join("config.json"))
                 .kill_on_drop(true) //IMPORTANT - for process to be killed
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
+                // .stdin(Stdio::null())
+                // .stdout(Stdio::null())
+                // .stderr(Stdio::null())
                 .spawn()
                 .context("Failed to spawn Jailer/Firecracker process")?
         };
 
-        tracing::info!("VM with tempdir at path {:?} started", tempdir.path());
+        tracing::info!("VM with chroot at path {:?} started", chroot);
 
-        Ok(Machine {
+        //check firecracker did not insta exit
+        let machine = Machine {
             _process: child,
             dir: tempdir,
-        })
+        };
+
+        Ok(machine)
     }
 
-    pub fn sock_path(&self) -> PathBuf {
-        self.dir.path().join("pyrod.sock_5000")
+    pub fn chroot(&self) -> PathBuf {
+        if cfg!(debug_assertions) {
+            self.dir.path().into()
+        } else {
+            self.dir.path().join("firecracker").join("vm").join("root")
+        }
     }
 }

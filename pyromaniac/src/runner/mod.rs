@@ -24,9 +24,10 @@ pub async fn run_code(lang: Language, code: String, input: String) -> Result<(St
 
     let machine = firecracker::Machine::spawn(config).await?;
 
-    tracing::debug!("VM process spawned, socket at {:?}", machine.sock_path());
+    tracing::debug!("VM process spawned, chroot at {:?}", machine.chroot());
 
-    let output = pyrod_client::run_code(machine.sock_path(), lang, code, input).await?;
+    let output =
+        pyrod_client::run_code(machine.chroot().join("pyrod.sock_5000"), lang, code, input).await?;
 
     Ok(output)
 }

@@ -9,6 +9,7 @@ async fn main() {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt::fmt()
             .with_span_events(FmtSpan::ACTIVE)
+            .pretty()
             .with_max_level(Level::DEBUG)
             .finish(),
     )
