@@ -98,7 +98,7 @@ impl Machine {
                         .to_string(),
                 )
                 .arg("--chroot-base-dir")
-                .arg(tempdir.path().join("/jailer"))
+                .arg(tempdir.path())
                 .arg("--") //firecracker args go after this
                 .arg("--no-api")
                 .arg("--config-file")
