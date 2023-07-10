@@ -2,8 +2,10 @@
 from python:3.11-alpine
 
 # create service user for untrusted processes to run under
+# system group, gid 111
 RUN addgroup -S -g 111 untrusted
-RUN adduser -S -D -H -u 111 -G untrusted untrusted
+# system user, no password, no home dir, no shell, uid 111, group untrusted
+RUN adduser -S -D -H -s /bin/false -u 111 -G untrusted untrusted
 
 # copy built pyrod binary in
 COPY target/x86_64-unknown-linux-musl/release/pyrod /bin
