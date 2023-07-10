@@ -69,11 +69,17 @@ impl Machine {
                 .spawn()
                 .context("Failed to spawn Firecracker process")?
         } else {
+            let vm_id = tempdir
+                .path()
+                .components()
+                .nth(1)
+                .expect("Could not get VM id")
+                .as_os_str();
             Command::new(crate::config::get().resource_path.join("jailer"))
                 .current_dir(tempdir.path())
                 .arg("--id")
-                .arg("TODO")
-                .arg("exec-file")
+                .arg(vm_id)
+                .arg("--exec-file")
                 .arg(crate::config::get().resource_path.join("firecracker"))
                 .arg("--uid")
                 .arg(
