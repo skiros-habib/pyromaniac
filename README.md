@@ -91,8 +91,8 @@ You'll need a firecracker binary and kernel and rootfs as before, but you'll als
 For jailer to run securely, it needs a dedicated system user with no privileges:
 
 ```
-addgroup --system --gid 111 jailer
-adduser --system --no-create-home --shell /bin/false --disabled-login --gid 111 --uid 111 jailer
+addgroup --system --gid 222 jailer
+adduser --system --no-create-home --shell /bin/false --disabled-login --gid 222 --uid 222 jailer
 ```
 
 Make sure to set the uid and gid in `.env`. The server will by default use jailer instead of just firecracker when compiled with `--release`.
