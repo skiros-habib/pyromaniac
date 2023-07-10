@@ -55,15 +55,11 @@ async fn run(
 }
 
 pub fn app() -> Router {
-    //you really expect anyone to handle this error?
-    let n_cpus = std::thread::available_parallelism()
-        .expect("Failed to determine number of CPUs")
-        .get();
-    let max_vms = n_cpus * 2;
-
     Router::new()
         .route("/api/run", post(run))
-        .with_state(Arc::new(Semaphore::new(max_vms)))
+        .with_state(Arc::new(Semaphore::new(
+            crate::config::get().runner_config.max_vms,
+        )))
         .fallback(|| async { (StatusCode::NOT_FOUND, "Not Found\n") })
 }
 

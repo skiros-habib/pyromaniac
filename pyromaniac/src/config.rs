@@ -16,6 +16,7 @@ pub struct Config {
 pub struct RunnerConfig {
     pub cpus: u32,
     pub memory: u32,
+    pub max_vms: usize,
     pub compile_timeout: Duration,
     pub run_timeout: Duration,
 }
@@ -47,12 +48,18 @@ impl Config {
                 3000
             });
 
+        let max_vms = std::thread::available_parallelism()
+            .expect("Failed to determine number of CPUs")
+            .get()
+            * 2;
+
         let c = Ok(Config {
             resource_path,
             port,
             runner_config: RunnerConfig {
                 cpus: 1,
                 memory: 1024,
+                max_vms,
                 compile_timeout: Duration::from_secs(10),
                 run_timeout: Duration::from_secs(15),
             },
