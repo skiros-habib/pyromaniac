@@ -97,6 +97,9 @@ impl Machine {
                         .expect("No gid provided, cannot start jailer")
                         .to_string(),
                 )
+                .arg("--chroot-base-dir")
+                .arg(tempdir.path().join("/jailer"))
+                .arg("--") //firecracker args go after this
                 .arg("--no-api")
                 .arg("--config-file")
                 .arg("config.json")
