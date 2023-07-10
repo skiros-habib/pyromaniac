@@ -7,14 +7,9 @@ use pyrod_service::Language;
 use std::path::PathBuf;
 
 fn get_rootfs(lang: Language) -> PathBuf {
-    crate::config::get().resource_path.join(format!(
-        "rootfs-{}.ext4",
-        match lang {
-            Language::Python => "python",
-            Language::Rust => "rust",
-            Language::Java => todo!(),
-        }
-    ))
+    crate::config::get()
+        .resource_path
+        .join(format!("rootfs-{lang}.ext4"))
 }
 
 #[tracing::instrument(skip(code, input))]
