@@ -54,7 +54,21 @@ impl Machine {
         //spawn firecracker process
         //use jailer in release mode, firecracker in debug
         let child = if cfg!(debug_assertions) {
-            // SAFETY - file is open and valid because we literally just opened it
+            Command::new(crate::config::get().resource_path.join("jailer"))
+                .current_dir(tempdir.path())
+                .arg("--no-api")
+                .arg("--config-file")
+                .arg("config.json")
+                .kill_on_drop(true) //IMPORTANT - for process to be killed
+                .stdin(Stdio::null())
+                .stdout(unsafe {
+                    //SAFETY - file is open and valid because we just opened it
+                    Stdio::from_raw_fd(std::fs::File::create("vm.out")?.into_raw_fd())
+                })
+                .stderr(Stdio::null())
+                .spawn()
+                .context("Failed to spawn Firecracker process")?
+        } else {
             Command::new(crate::config::get().resource_path.join("jailer"))
                 .current_dir(tempdir.path())
                 .arg("--id")
@@ -86,21 +100,6 @@ impl Machine {
                 .stderr(Stdio::null())
                 .spawn()
                 .context("Failed to spawn Jailer/Firecracker process")?
-        } else {
-            Command::new(crate::config::get().resource_path.join("jailer"))
-                .current_dir(tempdir.path())
-                .arg("--no-api")
-                .arg("--config-file")
-                .arg("config.json")
-                .kill_on_drop(true) //IMPORTANT - for process to be killed
-                .stdin(Stdio::null())
-                .stdout(unsafe {
-                    //SAFETY - file is open and valid because we just opened it
-                    Stdio::from_raw_fd(std::fs::File::create("vm.out")?.into_raw_fd())
-                })
-                .stderr(Stdio::null())
-                .spawn()
-                .context("Failed to spawn Firecracker process")?
         };
 
         tracing::info!("VM with tempdir at path {:?} started", tempdir.path());
