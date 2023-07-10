@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use pyrod_service::PyrodClient;
-use std::fmt::Debug;
+use std::{ffi::OsString, fmt::Debug};
 use std::{path::Path, time::SystemTime};
 use tarpc::context;
 use tarpc::tokio_serde::formats::Bincode;
@@ -57,9 +57,22 @@ pub async fn run_code(
     // tracing::info!("Got Pong from VM");
 
     let mut ctx = context::current();
-    ctx.deadline = SystemTime::now() + std::time::Duration::from_secs(60);
-    client
-        .run_code(ctx, lang, code, input)
+    let timeouts = (
+        crate::config::get().runner_config.compile_timeout,
+        crate::config::get().runner_config.run_timeout,
+    );
+
+    //include 5 seconds of slack
+    ctx.deadline = SystemTime::now() + timeouts.0 + timeouts.1 + std::time::Duration::from_secs(5);
+    let (stdout, stderr) = client
+        .run_code(ctx, lang, code, input, timeouts)
         .await?
-        .map_err(Into::into)
+        .map_err(anyhow::Error::from)?;
+
+    let convert = |s: OsString| {
+        s.into_string()
+            .map_err(|_| anyhow!("Output was not valid UTF8, could not convet to string"))
+    };
+
+    Ok((convert(stdout)?, convert(stderr)?))
 }

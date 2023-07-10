@@ -39,9 +39,7 @@ async fn main() -> Result<()> {
 
     server::BaseChannel::with_defaults(transport)
         .execute(PyrodServer.serve())
-        .instrument(tracing::info_span!(
-            "Spawning RPC server on vsock client connection"
-        ))
+        .instrument(tracing::info_span!("RPC Server"))
         .await;
 
     Ok(())
