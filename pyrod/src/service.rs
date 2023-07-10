@@ -38,7 +38,6 @@ impl Pyrod for PyrodServer {
         input: String,
         (compile_timeout, run_timeout): (Duration, Duration),
     ) -> Result<(OsString, OsString), RunError> {
-        //it's a zero-sized type, and this process is
         let runner = lang.get_runner();
 
         //there's no point making these async, because all they're doing
