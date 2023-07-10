@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use pyrod_service::PyrodClient;
+use std::os::unix::fs::PermissionsExt;
 use std::{ffi::OsString, fmt::Debug};
 use std::{path::Path, time::SystemTime};
 use tarpc::context;
@@ -16,6 +17,13 @@ async fn connect(sock: impl AsRef<Path> + Debug) -> Result<(PyrodClient, UnixLis
     //so we need to keep the connection open
     let listener =
         UnixListener::bind(sock).context(format!("Failed to open unix socket {sock:?}"))?;
+
+    //we need to chmod the port that is being listned on
+    //so that the firecracker process can connect
+    //as it runs under a different uid in jail.
+    //again, chown probably better
+    std::fs::set_permissions(sock, std::fs::Permissions::from_mode(0o777))
+        .expect("Could not set perms for socket");
 
     tracing::debug!(
         "Started listening for pyrod process on unix socket {:?}",

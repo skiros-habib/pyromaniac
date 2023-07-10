@@ -2,6 +2,7 @@ mod config;
 pub use config::VmConfig;
 
 use anyhow::{Context, Result};
+use std::os::unix::fs::PermissionsExt;
 use std::{
     os::fd::{FromRawFd, IntoRawFd},
     path::PathBuf,
@@ -14,7 +15,8 @@ use tokio::process::{Child, Command};
 /// When dropped, will kill the process and clean up all temp resources
 pub struct Machine {
     _process: Child,
-    dir: TempDir,
+    _dir: TempDir,
+    pub chroot: PathBuf,
 }
 
 impl Machine {
@@ -31,7 +33,7 @@ impl Machine {
         let chroot = if cfg!(debug_assertions) {
             tempdir.path().into()
         } else {
-            tempdir.path().join("firecracker").join("vm").join("root")
+            tempdir.path().join("firecracker").join("1").join("root")
         };
 
         std::fs::create_dir_all(&chroot)
@@ -59,7 +61,7 @@ impl Machine {
         let tmp_rootfs_path = chroot.join(rootfs_file_name);
 
         //create a copy of rootfs
-        tokio::fs::copy(conf.rootfs, tmp_rootfs_path)
+        tokio::fs::copy(&conf.rootfs, tmp_rootfs_path)
             .await
             .context("Failed to copy rootfs into tempdir")?;
 
@@ -73,6 +75,21 @@ impl Machine {
             chroot.join("kernel.bin"),
         )
         .context("Failed to hard link kernel into chroot")?;
+
+        //mark kernel as executable by anyone (firecracker runs under different uid)
+        //TODO: chown instead?
+        std::fs::set_permissions(
+            chroot.join("kernel.bin"),
+            std::fs::Permissions::from_mode(0o777),
+        )
+        .expect("Could not set perms for kernel");
+
+        //mark fs as writable
+        std::fs::set_permissions(
+            chroot.join(rootfs_file_name),
+            std::fs::Permissions::from_mode(0o777),
+        )
+        .expect("Could not set perms for rootfs");
 
         //spawn firecracker process
         //use jailer in release mode, firecracker in debug
@@ -97,7 +114,7 @@ impl Machine {
             Command::new(crate::config::get().resource_path.join("jailer"))
                 .current_dir(&chroot)
                 .arg("--id")
-                .arg("vm")
+                .arg("1")
                 .arg("--exec-file")
                 .arg(crate::config::get().resource_path.join("firecracker"))
                 .arg("--uid")
@@ -117,35 +134,28 @@ impl Machine {
                         .to_string(),
                 )
                 .arg("--chroot-base-dir")
-                .arg(&chroot)
+                .arg(tempdir.path()) //actual chroot is base_dir/firecracker/vm/root
                 .arg("--") //firecracker args go after this
                 .arg("--no-api")
                 .arg("--config-file")
-                .arg(&chroot.join("config.json"))
+                .arg("config.json")
                 .kill_on_drop(true) //IMPORTANT - for process to be killed
-                // .stdin(Stdio::null())
-                // .stdout(Stdio::null())
-                // .stderr(Stdio::null())
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
                 .spawn()
                 .context("Failed to spawn Jailer/Firecracker process")?
         };
 
-        tracing::info!("VM with chroot at path {:?} started", chroot);
+        tracing::info!("VM at path {:?} started", chroot);
 
         //check firecracker did not insta exit
         let machine = Machine {
             _process: child,
-            dir: tempdir,
+            _dir: tempdir,
+            chroot,
         };
 
         Ok(machine)
-    }
-
-    pub fn chroot(&self) -> PathBuf {
-        if cfg!(debug_assertions) {
-            self.dir.path().into()
-        } else {
-            self.dir.path().join("firecracker").join("vm").join("root")
-        }
     }
 }

@@ -26,19 +26,22 @@ impl VmConfig {
         };
 
         let boot_source = json!({
-            "kernel_image_path": chroot.join("kernel.bin"),
+            "kernel_image_path": "kernel.bin",
             "boot_args":boot_args,
         });
 
         let drive = {
-            let file_name = self.rootfs.file_name().unwrap_or_else(|| {
-                panic!("The filename for your rootfs is fucked: {:?}", self.rootfs)
-            });
-            let tmp_rootfs_path = chroot.join(file_name);
+            let file_name = self
+                .rootfs
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or_else(|| {
+                    panic!("The filename for your rootfs is fucked: {:?}", self.rootfs)
+                });
 
             json!({
                 "drive_id": "rootfs",
-                "path_on_host": tmp_rootfs_path,
+                "path_on_host": &file_name,
                 "is_root_device": true,
                 "is_read_only": false
             })
@@ -51,12 +54,12 @@ impl VmConfig {
         });
         let vsock = json!({
             "guest_cid": 3,
-            "uds_path": chroot.join("pyrod.sock"),
-            "vsock_id": "vsock0"
+            "uds_path": "pyrod.sock",
+            "vsock_id": "vsock0",
         });
 
         let logger = json!({
-            "log_path": chroot.join("firecracker.log"),
+            "log_path": "firecracker.log",
             "level": "Debug",
             "show_level": true,
             "show_log_origin": true
@@ -87,7 +90,6 @@ impl VmConfig {
             .await
             .context(format!("Could not open config file {config_path:?}"))?;
 
-        dbg!(&config_json, &outfile);
         outfile
             .write_all(config_json.to_string().as_bytes())
             .await

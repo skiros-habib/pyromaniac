@@ -88,13 +88,22 @@ To add a new one:
 
 You'll need a firecracker binary and kernel and rootfs as before, but you'll also need a jailer binary, and to take a few extra steps to secure the machine you're running on. A jailer binary can be built the same as firecracker (details above), and can be found at `firecracker/build/cargo_target/x86_64-unknown-linux-musl/release`. Place this next to the firecracker binary.
 
-For jailer to run securely, it needs a dedicated system user with no privileges:
+For jailer to run securely, it needs a dedicated system user with no privileges to that the firecracker process will run as:
 
 ```
-addgroup --system --gid 222 jailer
-adduser --system --no-create-home --shell /bin/false --disabled-login --gid 222 --uid 222 jailer
+addgroup --system --gid 222 jail
+adduser --system --no-create-home --shell /bin/false --disabled-login --gid 222 --uid 222 jail
 ```
 
 Make sure to set the uid and gid in `.env`. The server will by default use jailer instead of just firecracker when compiled with `--release`.
+
+Jailer uses certain kernel features to drop privileges for the firecracker binary, which requires that jailer run as root. Start the server with
+
+```
+cargo build --release --bin=pyromaniac 
+sudo target/release/pyromaniac
+```
+
+While running the server as root is not ideal, this does not affect the security of firecracker or jailer's sandboxing. See [this issue](https://github.com/firecracker-microvm/firecracker/issues/1190) for further discussion.
 
 For full security recommendations see https://github.com/firecracker-microvm/firecracker/blob/main/docs/prod-host-setup.md
