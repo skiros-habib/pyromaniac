@@ -15,6 +15,8 @@ async fn main() {
     )
     .expect("Could not install tracing subscriber");
 
+    tracing::info!("Starting web server...");
+
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(api::app().into_make_service())
         .instrument(tracing::info_span!("Web server"))
