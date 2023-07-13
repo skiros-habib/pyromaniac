@@ -8,9 +8,9 @@ A system for secure and high-performance execution of arbitrary code, powered by
 
 ## Getting Started
 
-Make sure the machine you intend to use supports KVM, and that you have access to it. See [the Firecracker docs](https://github.com/firecracker-microvm/firecracker/blob/main/docs/getting-started.md) for instructions on how to do this. You'll also need [a Rust toolchain](https://rustup.rs/) and [Docker](https://docs.docker.com/engine/install/).
+Make sure the machine you intend to use supports KVM, and that you have access to it. See [the Firecracker docs](https://github.com/firecracker-microvm/firecracker/blob/main/docs/getting-started.md) for instructions on how to do this. You'll need [a Rust toolchain](https://rustup.rs/) and [Docker](https://docs.docker.com/engine/install/).
 
-You'll need a firecracker binary placed in the `resources` directory. Either download the [latest release from Github](https://github.com/firecracker-microvm/firecracker/releases/latest), or clone firecracker and compile your own copy:
+Pyromaniac looks for the VM resources in a `resources` directory. Put the firecracker binary there, either download the [latest release from Github](https://github.com/firecracker-microvm/firecracker/releases/latest), or clone the firecracker repo and compile your own copy:
 
 ```
 git clone https://github.com/firecracker-microvm/firecracker
@@ -18,7 +18,7 @@ git clone https://github.com/firecracker-microvm/firecracker
 cp ./firecracker/build/cargo_target/x86_64-unknown-linux-musl/release/firecracker ./resources
 ```
 
-You'll also need a kernel binary, and a rootfs with `pyrod` in it.
+You'll also need a kernel build, and a rootfs with `pyrod` in it.
 
 See [Firecracker docs](https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md) for full details.
 
@@ -35,7 +35,7 @@ cp build/kernel/linux-5.10/vmlinux-5.10-x86_64.bin ../resources/kernel.bin
 
 ### RootFS
 
-Different images are needed for different languages. From the `pyromaniac` root directory, run:
+Different images are used for different languages. From the `pyromaniac` root directory, run:
 
 ```
 ./scripts/mkrootfs.sh <language>
@@ -46,16 +46,17 @@ This will
     - `pyrod` is built for `x86_64-unknown-linux-musl`, you'll have to install that target via rustup
 2. Create a new image file and mount it
 3. Build an alpine-based Docker container and copy it's root filesystem into the image file
+4. Copy the image file into the resources directory
 
 ### Starting the Server
 
-Copy `.env.example` to `.env` and configure it with your desired port, and the full path to the resource directory.
+Copy `.env.example` to `.env` and configure it with your desired port, and the **full path** to the resource directory.
 
 ```
 cargo run --bin=pyromaniac
 ```
 
-This will launch the server on the given port. For other config options for the server, such as configuring the firecracker runtime options see `pyromaniac/src/config.rs`.
+This will launch the server on the given port. For other config options for the server, such as configuring the firecracker runtime options see `pyromaniac/src/config.rs`. When running in debug mode, jailer is not used, and the console output from the VM is written to `vm.out`.
 
 The server exposes a single endpoint, `/api/run`, which accepts JSON with the following schema:
 
