@@ -47,7 +47,7 @@ impl super::Runner for JavaRunner {
         //spawn child process
         let mut child = Command::new("/usr/bin/java")
             .current_dir("/tmp/java")
-            .arg("Code")
+            .arg("Main")
             .uid(111) //service user id of untrusted process - don't want to run as root
             .gid(111) //set in the dockerfiles used to build rootfs images
             .stdin(Stdio::piped())
