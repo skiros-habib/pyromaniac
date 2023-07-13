@@ -1,4 +1,7 @@
 # Pyromaniac
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/joeyh021/pyromaniac/ci.yml?label=CI)
+
+
 _Remote Code Execution as a Service_
 
 A system for secure and high-performance execution of arbitrary code, powered by [Firecracker microVMs](https://github.com/firecracker-microvm/firecracker)
@@ -73,17 +76,6 @@ The response will look like:
 }
 ```
 
-### Adding a new language
-
-Currently supported languages:
-- Python
-- Rust
-
-To add a new one:
-- Add a new implemenation of the `Runner` trait in `pyrod/src/run`
-- Add it to the `Language` enum (and it's `impl`s) in `pyrod/src/run/mod.rs`
-- Add a new rootfs build for it by creating a new Dockerfile in `scripts/images`
-
 ## Deployment in Production
 
 You'll need a firecracker binary and kernel and rootfs as before, but you'll also need a jailer binary, and to take a few extra steps to secure the machine you're running on. A jailer binary can be built the same as firecracker (details above), and can be found at `firecracker/build/cargo_target/x86_64-unknown-linux-musl/release`. Place this next to the firecracker binary.
@@ -107,3 +99,19 @@ sudo target/release/pyromaniac
 While running the server as root is not ideal, this does not affect the security of firecracker or jailer's sandboxing. See [this issue](https://github.com/firecracker-microvm/firecracker/issues/1190) for further discussion.
 
 For full security recommendations see https://github.com/firecracker-microvm/firecracker/blob/main/docs/prod-host-setup.md
+
+## Development
+
+### Adding a new language
+
+Currently supported languages:
+- Python
+- Rust
+- Java
+
+To add a new one:
+- Add a new implemenation of the `Runner` trait in `pyrod/src/run`
+    - `Runner::compile` should write the code out to a file, and then run the compiler if necessary
+    - `Runner::run` should execute the compiled file
+- Add it to the `Language` enum (and it's `impl`s) in `pyrod/src/run/mod.rs`
+- Add a new rootfs build for it by creating a new Dockerfile in `scripts/images`
