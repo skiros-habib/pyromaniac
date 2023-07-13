@@ -110,6 +110,8 @@ Currently supported languages:
 - Rust
 - Java
 
+See [here](docs/languages.md) for full info on the details of each supported language.
+
 To add a new one:
 - Add a new implemenation of the `Runner` trait in `pyrod/src/run`
     - `Runner::compile` should write the code out to a file, and then run the compiler if necessary
