@@ -12,12 +12,13 @@ impl super::Runner for JavaRunner {
     //but we compile it anyway for speed
     #[tracing::instrument]
     fn compile(&self, code: String) -> Result<(), RunError> {
-        let path = PathBuf::from("/tmp/code.java");
+        let path = PathBuf::from("/tmp/java/code.java");
         std::fs::write(&path, code).map_err(RunError::from)?;
         tracing::debug!("Code written out to {path:?}");
 
         let child = Command::new("/usr/bin/javac") // where it's installed in alpine
-            .arg("/tmp/code.java")
+            .current_dir("/tmp/java")
+            .arg("code.java")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .uid(111)
@@ -45,6 +46,7 @@ impl super::Runner for JavaRunner {
     fn run(&self, stdin: String) -> Result<(OsString, OsString), RunError> {
         //spawn child process
         let mut child = Command::new("/usr/bin/java")
+            .current_dir("/tmp/java")
             .arg("Code")
             .uid(111) //service user id of untrusted process - don't want to run as root
             .gid(111) //set in the dockerfiles used to build rootfs images
