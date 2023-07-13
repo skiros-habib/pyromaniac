@@ -77,7 +77,7 @@ impl Config {
                 cpus: 1,
                 memory: 1024,
                 max_vms,
-                compile_timeout: Duration::from_secs(10),
+                compile_timeout: Duration::from_secs(20),
                 run_timeout: Duration::from_secs(15),
                 uid,
                 gid,

@@ -20,9 +20,9 @@ impl VmConfig {
 
         //disable stty if we don't need it, only used for writing logs in debug mode
         let boot_args = if cfg!(debug_assertions) {
-            "init=/bin/pyrod console=ttyS0 reboot=k panic=1 pci=off"
+            "init=/bin/pyrod console=ttyS0 reboot=k panic=1 pci=off random.trust_cpu=on"
         } else {
-            "init=/bin/pyrod reboot=k panic=1 pci=off"
+            "init=/bin/pyrod reboot=k panic=1 pci=off random.trust_cpu=on"
         };
 
         let boot_source = json!({

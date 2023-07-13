@@ -21,7 +21,7 @@ RUN cargo add anyhow
 RUN cargo add itertools
 RUN cargo add rand
 # build to cache deps
-RUN cargo build --release
+RUN cargo build
 
 RUN chown -R 111:111 /cargo_project
 

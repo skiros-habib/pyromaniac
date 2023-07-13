@@ -40,6 +40,8 @@ impl super::Runner for RustRunner {
             .gid(111)
             .spawn()?;
 
+        tracing::info!("Rust compile child process spawned");
+
         //collect output
         let output = child.wait_with_output()?;
 
