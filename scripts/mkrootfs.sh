@@ -17,6 +17,9 @@ case $lang in
 "python")
     size=100
     ;;
+"java")
+    size=400
+    ;;
 *)
     echo "unrecognised language"
     exit 0

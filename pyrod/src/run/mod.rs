@@ -1,3 +1,4 @@
+mod java;
 mod python;
 mod rust;
 
@@ -18,10 +19,13 @@ pub trait Runner: Send + Sync {
 
 impl Language {
     pub fn get_runner(self) -> &'static dyn Runner {
+        //we leak these because we need them to be passed between threads
+        //they're zero-sized types anyway and we don't need the process
+        //to be around for long
         match self {
             Language::Python => Box::leak(Box::new(python::PythonRunner)),
             Language::Rust => Box::leak(Box::new(rust::RustRunner)),
-            Language::Java => todo!(),
+            Language::Java => Box::leak(Box::new(java::JavaRunner)),
         }
     }
 }
