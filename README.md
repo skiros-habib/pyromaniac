@@ -4,49 +4,65 @@
 
 _Remote Code Execution as a Service_
 
-A system for secure and high-performance execution of arbitrary code, powered by [Firecracker microVMs](https://github.com/firecracker-microvm/firecracker)
+A system for secure and high-performance execution of arbitrary code, powered by [Firecracker microVMs](https://github.com/firecracker-microvm/firecracker).
 
 ## Getting Started
 
-Make sure the machine you intend to use supports KVM, and that you have access to it. See [the Firecracker docs](https://github.com/firecracker-microvm/firecracker/blob/main/docs/getting-started.md) for instructions on how to do this. You'll need [a Rust toolchain](https://rustup.rs/) and [Docker](https://docs.docker.com/engine/install/).
+Before you do anything, you'll need:
+- [a Rust toolchain](https://rustup.rs/)
+    - As well as your native toolchain, you'll need to `rustup target add x86_64-unknown-linux-musl`
+- [Docker](https://docs.docker.com/engine/install/)
+- A few system packages:
+    - Ubuntu: `apt install curl git build-essential ca-certificates gnupg`
 
-Pyromaniac looks for the VM resources in a `resources` directory. Put the firecracker binary there, either download the [latest release from Github](https://github.com/firecracker-microvm/firecracker/releases/latest), or clone the firecracker repo and compile your own copy:
+Clone down the repo and init submodules:
+```sh
+git clone https://github.com/Joeyh021/pyromaniac.git
+cd pyromaniac
+git submodule init
+git submodule update
+```
+
+Firecracker comes with a dev container to make life easier. Use it to check that your machine and environment supports virtualisation and other necessary features for Firecracker:
+
+```sh
+sudo firecracker/tools/devtool checkenv  # sudo is not needed if you have access to dmesg
+```
+
+Pyromaniac looks for the VM resources in a `resources` directory. Put the firecracker binary there, either download the [latest release from Github](https://github.com/firecracker-microvm/firecracker/releases/latest), or compile your own copy:
 
 ```
-git clone https://github.com/firecracker-microvm/firecracker
-./firecracker/tools/devtool build
-cp ./firecracker/build/cargo_target/x86_64-unknown-linux-musl/release/firecracker ./resources
+firecracker/tools/devtool build --release
+cp firecracker/build/cargo_target/x86_64-unknown-linux-musl/release/firecracker ./resources
+# also copy jailer (see below)
+cp firecracker/build/cargo_target/x86_64-unknown-linux-musl/release/jailer ./resources 
 ```
-
-You'll also need a kernel build, and a rootfs with `pyrod` in it.
-
-See [Firecracker docs](https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md) for full details.
 
 ### Kernel
 
-Specific kernel configs are required to include the device drivers needed for firecracker. The easiest thing to do is to build in Firecracker's devcontainer using their provided configs. The commands below are for v5.10 on x86_64. The output will be under `firecracker/build/kernel/linux-5.10`
+Specific kernel configs are required to include the device drivers needed for firecracker. The easiest thing to do is to build in Firecracker's devcontainer using their provided configs. Build and copy into the `resources` directory:
 
 ```sh
-git clone https://github.com/firecracker-microvm/firecracker
-cd firecracker
-./tools/devtool build_kernel -c resources/guest_configs/microvm-kernel-x86_64-5.10.config -n $(nproc)
-cp build/kernel/linux-5.10/vmlinux-5.10-x86_64.bin ../resources/kernel.bin
+firecracker/tools/devtool build_kernel -c resources/guest_configs/microvm-kernel-x86_64-5.10.config -n $(nproc)
+cp firecracker/build/kernel/linux-5.10/vmlinux-5.10-x86_64.bin ./resources/kernel.bin
 ```
 
 ### RootFS
 
-Different images are used for different languages. From the `pyromaniac` root directory, run:
+Different images are used for different languages, and are built using `scripts/mkrootfs <language>`:
 
 ```
-./scripts/mkrootfs.sh <language>
+scripts/mkrootfs.sh python
+scripts/mkrootfs.sh rust
+scripts/mkrootfs.sh java
 ```
 
 This will
 1. Build `pyrod` 
     - `pyrod` is built for `x86_64-unknown-linux-musl`, you'll have to install that target via rustup
-2. Create a new image file and mount it
-3. Build an alpine-based Docker container and copy it's root filesystem into the image file
-4. Copy the image file into the resources directory
+2. Create a new ext4 image file and mount it
+3. Build an alpine-based Docker container and copy it's root filesystem into the mounted image file
+4. Unmount the image file and copy it into the resources directory
 
 ### Starting the Server
 
