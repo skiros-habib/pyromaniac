@@ -1,7 +1,7 @@
+mod bash;
 mod java;
 mod python;
 mod rust;
-mod bash;
 mod sh;
 
 use std::{ffi::OsString, time::Duration};

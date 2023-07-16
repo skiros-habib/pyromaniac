@@ -144,3 +144,4 @@ To add a new one:
 - Add it to the `Language` enum (and it's `impl`s) in `pyrod/src/run/mod.rs`
 - Add a new rootfs build for it by creating a new Dockerfile in `scripts/images`
 - Add it as an option in `scripts/mkrootfs.sh`
+- Add it to docs/languages.md

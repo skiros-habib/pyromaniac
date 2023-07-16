@@ -8,7 +8,7 @@ use super::RunError;
 pub struct BashRunner;
 
 impl super::Runner for BashRunner {
-    // Bash files can be executed from anywhere, 
+    // Bash files can be executed from anywhere,
     #[tracing::instrument]
     fn compile(&self, code: String) -> Result<(), RunError> {
         let path = PathBuf::from("/tmp/code.sh");

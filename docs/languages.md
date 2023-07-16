@@ -27,3 +27,11 @@ public class Main{
     }
 }
 ```
+
+## Bash
+GNU Bourne Again Shell, as included in https://hub.docker.com/_/bash
+- **Version**: 5.2
+
+## Sh (ash)
+Busybox ash, as included in https://hub.docker.com/_/alpine
+- **Version**: 3.18
