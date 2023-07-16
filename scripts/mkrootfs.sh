@@ -31,7 +31,7 @@ esac
 cargo build --release --bin=pyrod --target=x86_64-unknown-linux-musl
 
 dd if=/dev/zero of=rootfs.ext4 bs=1M count=$size
-mkfs.ext4 rootfs.ext4
+/usr/sbin/mkfs.ext4 rootfs.ext4
 
 
 sudo rm -rf /tmp/rootfs && mkdir /tmp/rootfs
