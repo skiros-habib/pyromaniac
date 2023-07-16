@@ -132,6 +132,8 @@ Currently supported languages:
 - Python
 - Rust
 - Java
+- BASH (Bourne Again SHell)
+- Sh (/bin/ash)
 
 See [here](docs/languages.md) for full info on the details of each supported language.
 
@@ -141,3 +143,4 @@ To add a new one:
     - `Runner::run` should execute the compiled file
 - Add it to the `Language` enum (and it's `impl`s) in `pyrod/src/run/mod.rs`
 - Add a new rootfs build for it by creating a new Dockerfile in `scripts/images`
+- Add it as an option in `scripts/mkrootfs.sh`
