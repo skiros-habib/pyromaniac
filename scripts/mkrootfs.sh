@@ -20,6 +20,12 @@ case $lang in
 "java")
     size=400
     ;;
+"bash")
+    size=50
+    ;;
+"sh")
+    size=20
+    ;;
 *)
     echo "unrecognised language"
     exit 0

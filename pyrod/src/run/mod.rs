@@ -1,6 +1,8 @@
 mod java;
 mod python;
 mod rust;
+mod bash;
+mod sh;
 
 use std::{ffi::OsString, time::Duration};
 use thiserror::Error;
@@ -10,6 +12,8 @@ pub enum Language {
     Python,
     Rust,
     Java,
+    Bash,
+    Sh,
 }
 
 pub trait Runner: Send + Sync {
@@ -26,6 +30,8 @@ impl Language {
             Language::Python => Box::leak(Box::new(python::PythonRunner)),
             Language::Rust => Box::leak(Box::new(rust::RustRunner)),
             Language::Java => Box::leak(Box::new(java::JavaRunner)),
+            Language::Bash => Box::leak(Box::new(bash::BashRunner)),
+            Language::Sh => Box::leak(Box::new(sh::ShRunner)),
         }
     }
 }
@@ -39,6 +45,8 @@ impl std::fmt::Display for Language {
                 Language::Python => "python",
                 Language::Rust => "rust",
                 Language::Java => "java",
+                Language::Bash => "bash",
+                Language::Sh => "sh",
             }
         )
     }
