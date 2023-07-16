@@ -100,13 +100,20 @@ You'll need a firecracker binary and kernel and rootfs as before, but you'll als
 For jailer to run securely, it needs a dedicated system user with no privileges to that the firecracker process will run as:
 
 ```
-addgroup --system --gid 222 jail
-adduser --system --no-create-home --shell /bin/false --disabled-login --gid 222 --uid 222 jail
+sudo useradd --system --shell /bin/false firecracker
 ```
 
-Make sure to set the uid and gid in `.env`. The server will by default use jailer instead of just firecracker when compiled with `--release`.
+The server will by default use jailer instead of just firecracker when compiled with `--release`. Jailer uses certain kernel features to drop privileges for the firecracker binary, which requires that jailer run as root. 
 
-Jailer uses certain kernel features to drop privileges for the firecracker binary, which requires that jailer run as root. Start the server with
+Add the required config settings to the `.env` file:
+```
+echo "RESOURCE_PATH=$(pwd)/resources" >> .env  # resource path needs to be the full path
+echo "UID=$(id -u firecracker)" >> .env
+echo "GID=$(id -g firecracker)" >> .env
+echo "PORT=8000" >> .env  
+```
+
+Start the server with
 
 ```
 cargo build --release --bin=pyromaniac 
