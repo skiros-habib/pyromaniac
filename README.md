@@ -31,7 +31,7 @@ sudo firecracker/tools/devtool checkenv  # sudo is not needed if you have access
 
 Pyromaniac looks for the VM resources in a `resources` directory. Put the firecracker binary there, either download the [latest release from Github](https://github.com/firecracker-microvm/firecracker/releases/latest), or compile your own copy:
 
-```
+```sh
 firecracker/tools/devtool build --release
 cp firecracker/build/cargo_target/x86_64-unknown-linux-musl/release/firecracker ./resources
 # also copy jailer (see below)
@@ -106,7 +106,7 @@ sudo useradd --system --shell /bin/false firecracker
 The server will by default use jailer instead of just firecracker when compiled with `--release`. Jailer uses certain kernel features to drop privileges for the firecracker binary, which requires that jailer run as root. 
 
 Add the required config settings to the `.env` file:
-```
+```sh
 echo "RESOURCE_PATH=$(pwd)/resources" >> .env  # resource path needs to be the full path
 echo "UID=$(id -u firecracker)" >> .env
 echo "GID=$(id -g firecracker)" >> .env
@@ -115,7 +115,7 @@ echo "PORT=8000" >> .env
 
 Start the server with
 
-```
+```sh
 cargo build --release --bin=pyromaniac 
 sudo target/release/pyromaniac
 ```
