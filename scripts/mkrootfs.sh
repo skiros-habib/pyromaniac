@@ -8,6 +8,16 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
+all=("rust" "python" "java" "bash" "sh")
+
+if [[ $lang == "all" ]] then
+    echo "building rootfs for all languages"
+    for l in "${all[@]}"; do
+        echo "building rootfs for $l"
+        ./$0 $l
+    done
+    exit 0
+fi
 # 100MB rootfs - change if gonna run out of space
 
 case $lang in
@@ -27,7 +37,7 @@ case $lang in
     size=20
     ;;
 *)
-    echo "unrecognised language"
+    echo "unrecognised language $1"
     exit 0
     ;;
 esac
