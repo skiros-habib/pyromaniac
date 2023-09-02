@@ -79,7 +79,7 @@ The server exposes a single endpoint, `/api/run`, which accepts JSON with the fo
 ```json
 {
     "lang": "Python",
-    "code": "print(f\"Hello, {}!\")",
+    "code": "print(f\"Hello, {input()}!\")",
     "input": "joeyh021"
 }
 ```
