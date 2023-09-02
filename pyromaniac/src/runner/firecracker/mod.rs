@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use std::os::unix::fs::PermissionsExt;
 use std::{
     os::fd::{FromRawFd, IntoRawFd},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Stdio,
 };
 use tempfile::TempDir;
@@ -70,11 +70,12 @@ impl Machine {
         //we need to copy kernel into chroot so firecracker can use it when running in jailer mode
         //to save a copy we can just hard link it
         //we *do* have to copy rootfs tho because those are modified between runs
+        //this may fail if /tmp is not mounted in the host's root filesystem
         std::fs::hard_link(
             crate::config::get().resource_path.join("kernel.bin"),
             chroot.join("kernel.bin"),
         )
-        .context("Failed to hard link kernel into chroot")?;
+        .context("Failed to hard link kernel into chroot. Is /tmp mounted as a tmpfs?")?;
 
         //mark kernel as executable by anyone (firecracker runs under different uid)
         //TODO: chown instead?
