@@ -1,5 +1,5 @@
 # based on instructions from https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
-from python:3.11-alpine
+FROM python:3.11-alpine
 
 # create service user for untrusted processes to run under
 # system group, gid 111

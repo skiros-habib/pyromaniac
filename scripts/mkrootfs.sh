@@ -10,7 +10,7 @@ fi
 
 all=("rust" "python" "java" "bash" "sh")
 
-if [[ $lang == "all" ]] then
+if [ $lang == "all" ]; then
     echo "building rootfs for all languages"
     for l in "${all[@]}"; do
         echo "building rootfs for $l"

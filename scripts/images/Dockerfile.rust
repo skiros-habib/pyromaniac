@@ -1,5 +1,5 @@
 # based on instructions from https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
-from rust:1-alpine3.18
+FROM rust:1-alpine3.18
 
 # create service user for untrusted processes to run under
 # system group, gid 111
